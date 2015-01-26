@@ -12,6 +12,8 @@
 #import "MWPhoto.h"
 #import "DACircularProgressView.h"
 #import "MWPhotoBrowserPrivate.h"
+#import "RTSpinKitView.h"
+#import "HexColor.h"
 
 // Private methods and properties
 @interface MWZoomingScrollView () {
@@ -19,8 +21,8 @@
     MWPhotoBrowser __weak *_photoBrowser;
 	MWTapDetectingView *_tapView; // for background taps
 	MWTapDetectingImageView *_photoImageView;
-	DACircularProgressView *_loadingIndicator;
     UIImageView *_loadingError;
+    RTSpinKitView *_spinner;
     
 }
 
@@ -49,19 +51,11 @@
 		_photoImageView.backgroundColor = [UIColor blackColor];
 		[self addSubview:_photoImageView];
 		
-		// Loading indicator
-		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 40.0f, 40.0f)];
-        _loadingIndicator.userInteractionEnabled = NO;
-        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
-            _loadingIndicator.thicknessRatio = 0.1;
-            _loadingIndicator.roundedCorners = NO;
-        } else {
-            _loadingIndicator.thicknessRatio = 0.2;
-            _loadingIndicator.roundedCorners = YES;
-        }
-		_loadingIndicator.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleTopMargin |
-        UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin;
-		[self addSubview:_loadingIndicator];
+        _spinner = [[RTSpinKitView alloc] initWithStyle:RTSpinKitViewStyleThreeBounce];
+        _spinner.color = [HXColor colorWithHexString:@"#E6E6E6"];
+        _spinner.backgroundColor = [UIColor clearColor];
+        _spinner.center = self.center;
+        [self addSubview:_spinner];
 
         // Listen progress notifications
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -186,21 +180,20 @@
     NSDictionary *dict = [notification object];
     id <MWPhoto> photoWithProgress = [dict objectForKey:@"photo"];
     if (photoWithProgress == self.photo) {
-        float progress = [[dict valueForKey:@"progress"] floatValue];
-        _loadingIndicator.progress = MAX(MIN(1, progress), 0);
+        // do nothing for now, this might be useful for something
+        //float progress = [[dict valueForKey:@"progress"] floatValue];
     }
 }
 
 - (void)hideLoadingIndicator {
-    _loadingIndicator.hidden = YES;
+    _spinner.hidden = YES;
 }
 
 - (void)showLoadingIndicator {
     self.zoomScale = 0;
     self.minimumZoomScale = 0;
     self.maximumZoomScale = 0;
-    _loadingIndicator.progress = 0;
-    _loadingIndicator.hidden = NO;
+    _spinner.hidden = NO;
     [self hideImageFailure];
 }
 
@@ -289,11 +282,11 @@
 	_tapView.frame = self.bounds;
 	
 	// Position indicators (centre does not seem to work!)
-	if (!_loadingIndicator.hidden)
-        _loadingIndicator.frame = CGRectMake(floorf((self.bounds.size.width - _loadingIndicator.frame.size.width) / 2.),
-                                         floorf((self.bounds.size.height - _loadingIndicator.frame.size.height) / 2),
-                                         _loadingIndicator.frame.size.width,
-                                         _loadingIndicator.frame.size.height);
+	if (!_spinner.hidden)
+        _spinner.frame = CGRectMake(floorf((self.bounds.size.width - _spinner.frame.size.width) / 2.),
+                                         floorf((self.bounds.size.height - _spinner.frame.size.height) / 2),
+                                         _spinner.frame.size.width,
+                                         _spinner.frame.size.height);
 	if (_loadingError)
         _loadingError.frame = CGRectMake(floorf((self.bounds.size.width - _loadingError.frame.size.width) / 2.),
                                          floorf((self.bounds.size.height - _loadingError.frame.size.height) / 2),
